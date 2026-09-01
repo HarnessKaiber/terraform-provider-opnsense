@@ -63,7 +63,8 @@ jobs:
               "firewall": ["firewall"],
               "unbound": ["unbound"],
               "ipsec": ["ipsec"],
-              "other": ["cron", "diagnostics", "dnsmasq", "interfaces", "kea",
+              "zenarmor": ["zenarmor"],
+              "other": ["auth", "core", "cron", "diagnostics", "dnsmasq", "ids", "interfaces", "kea",
                         "openvpn", "quagga", "routes", "trust", "wireguard"],
           }
           # Non-service packages, tested with "other" on full-suite runs.
@@ -162,15 +163,20 @@ jobs:
           -nographic &
           QEMU_PID="$!"
           echo "qemu-pid=${QEMU_PID}" >> "$GITHUB_OUTPUT"
-          sleep 180 # Wait for the VM to boot
           [ -d "/proc/${QEMU_PID}" ] || (echo "QEMU process not found" && exit 1)
       - name: Wait for QEMU guest agent
+        env:
+          QEMU_PID: ${{ steps.start-vm.outputs.qemu-pid }}
         run: |
           python3 << 'EOF'
           import json, os, select, socket, sys, time
           SOCK = os.environ.get("QEMU_GA_SOCKET", "/tmp/qemu-virtserialport.sock")
-          deadline = time.monotonic() + 180
+          QEMU_PID = os.environ["QEMU_PID"]
+          deadline = time.monotonic() + 600
           while time.monotonic() < deadline:
+              if not os.path.isdir(f"/proc/{QEMU_PID}"):
+                  print("ERROR: QEMU exited before the guest agent became ready", file=sys.stderr)
+                  sys.exit(1)
               try:
                   with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
                       s.settimeout(3)
@@ -183,7 +189,7 @@ jobs:
               except Exception:
                   pass
               time.sleep(3)
-          print("ERROR: Guest agent not ready after 180s", file=sys.stderr)
+          print("ERROR: Guest agent not ready after 600s", file=sys.stderr)
           sys.exit(1)
           EOF
       - name: Create API key
@@ -192,6 +198,8 @@ jobs:
           python3 scripts/create-apikey.py 2> "$GITHUB_OUTPUT"
       - name: Setup env vars for tests
         run: |
+          echo "::add-mask::${{ steps.apikey.outputs.key }}"
+          echo "::add-mask::${{ steps.apikey.outputs.secret }}"
           {
             echo "OPNSENSE_API_KEY=${{ steps.apikey.outputs.key }}";
             echo "OPNSENSE_API_SECRET=${{ steps.apikey.outputs.secret }}";

@@ -6,12 +6,15 @@ import (
 	"strconv"
 
 	"github.com/browningluke/opnsense-go/pkg/api"
+	"github.com/browningluke/terraform-provider-opnsense/internal/service/auth"
+	coreservice "github.com/browningluke/terraform-provider-opnsense/internal/service/core"
+	"github.com/browningluke/terraform-provider-opnsense/internal/service/cron"
 	"github.com/browningluke/terraform-provider-opnsense/internal/service/diagnostics"
 	"github.com/browningluke/terraform-provider-opnsense/internal/service/dnsmasq"
 	"github.com/browningluke/terraform-provider-opnsense/internal/service/firewall"
+	"github.com/browningluke/terraform-provider-opnsense/internal/service/ids"
 	"github.com/browningluke/terraform-provider-opnsense/internal/service/interfaces"
 	"github.com/browningluke/terraform-provider-opnsense/internal/service/ipsec"
-	"github.com/browningluke/terraform-provider-opnsense/internal/service/cron"
 	"github.com/browningluke/terraform-provider-opnsense/internal/service/kea"
 	"github.com/browningluke/terraform-provider-opnsense/internal/service/openvpn"
 	"github.com/browningluke/terraform-provider-opnsense/internal/service/quagga"
@@ -19,6 +22,7 @@ import (
 	"github.com/browningluke/terraform-provider-opnsense/internal/service/trust"
 	"github.com/browningluke/terraform-provider-opnsense/internal/service/unbound"
 	"github.com/browningluke/terraform-provider-opnsense/internal/service/wireguard"
+	"github.com/browningluke/terraform-provider-opnsense/internal/service/zenarmor"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
@@ -290,12 +294,15 @@ func (p *opnsenseProvider) Configure(ctx context.Context, req provider.Configure
 
 func (p *opnsenseProvider) Resources(ctx context.Context) []func() resource.Resource {
 	controllers := [][]func() resource.Resource{
+		auth.Resources(ctx),
 		diagnostics.Resources(ctx),
 		dnsmasq.Resources(ctx),
 		firewall.Resources(ctx),
 		interfaces.Resources(ctx),
 		ipsec.Resources(ctx),
+		ids.Resources(ctx),
 		cron.Resources(ctx),
+		coreservice.Resources(ctx),
 		kea.Resources(ctx),
 		openvpn.Resources(ctx),
 		quagga.Resources(ctx),
@@ -314,12 +321,15 @@ func (p *opnsenseProvider) Resources(ctx context.Context) []func() resource.Reso
 
 func (p *opnsenseProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	controllers := [][]func() datasource.DataSource{
+		auth.DataSources(ctx),
 		diagnostics.DataSources(ctx),
 		dnsmasq.DataSources(ctx),
 		firewall.DataSources(ctx),
 		interfaces.DataSources(ctx),
 		ipsec.DataSources(ctx),
+		ids.DataSources(ctx),
 		cron.DataSources(ctx),
+		coreservice.DataSources(ctx),
 		kea.DataSources(ctx),
 		openvpn.DataSources(ctx),
 		quagga.DataSources(ctx),
@@ -327,6 +337,7 @@ func (p *opnsenseProvider) DataSources(ctx context.Context) []func() datasource.
 		trust.DataSources(ctx),
 		unbound.DataSources(ctx),
 		wireguard.DataSources(ctx),
+		zenarmor.DataSources(ctx),
 	}
 
 	var dataSources []func() datasource.DataSource

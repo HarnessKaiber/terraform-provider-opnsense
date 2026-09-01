@@ -1,6 +1,7 @@
 package openvpn_test
 
 import (
+	"os"
 	"regexp"
 	"testing"
 
@@ -19,6 +20,7 @@ var echoFactories = map[string]func() (tfprotov6.ProviderServer, error){
 }
 
 func TestAccOpenvpnGenerateKeyEphemeral_default(t *testing.T) {
+	requireOpenVPNAcc(t)
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccPreCheck(t) },
 		TerraformVersionChecks:   []tfversion.TerraformVersionCheck{tfversion.SkipBelow(tfversion.Version1_10_0)},
@@ -46,6 +48,7 @@ resource "echo" "test" {}
 }
 
 func TestAccOpenvpnGenerateKeyEphemeral_tlsAuth(t *testing.T) {
+	requireOpenVPNAcc(t)
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccPreCheck(t) },
 		TerraformVersionChecks:   []tfversion.TerraformVersionCheck{tfversion.SkipBelow(tfversion.Version1_10_0)},
@@ -73,6 +76,7 @@ resource "echo" "test" {}
 }
 
 func TestAccOpenvpnGenerateKeyEphemeral_invalidKeyType(t *testing.T) {
+	requireOpenVPNAcc(t)
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccPreCheck(t) },
 		TerraformVersionChecks:   []tfversion.TerraformVersionCheck{tfversion.SkipBelow(tfversion.Version1_10_0)},
@@ -94,6 +98,14 @@ resource "echo" "test" {}
 			},
 		},
 	})
+}
+
+func requireOpenVPNAcc(t *testing.T) {
+	t.Helper()
+	if os.Getenv("TF_ACC") != "1" {
+		t.Skip("acceptance test; set TF_ACC=1 to run")
+	}
+	acctest.AccPreCheck(t)
 }
 
 func mergeFactories(m ...map[string]func() (tfprotov6.ProviderServer, error)) map[string]func() (tfprotov6.ProviderServer, error) {
