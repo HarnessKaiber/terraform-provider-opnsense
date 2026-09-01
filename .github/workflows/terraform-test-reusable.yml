@@ -162,15 +162,20 @@ jobs:
           -nographic &
           QEMU_PID="$!"
           echo "qemu-pid=${QEMU_PID}" >> "$GITHUB_OUTPUT"
-          sleep 180 # Wait for the VM to boot
           [ -d "/proc/${QEMU_PID}" ] || (echo "QEMU process not found" && exit 1)
       - name: Wait for QEMU guest agent
+        env:
+          QEMU_PID: ${{ steps.start-vm.outputs.qemu-pid }}
         run: |
           python3 << 'EOF'
           import json, os, select, socket, sys, time
           SOCK = os.environ.get("QEMU_GA_SOCKET", "/tmp/qemu-virtserialport.sock")
-          deadline = time.monotonic() + 180
+          QEMU_PID = os.environ["QEMU_PID"]
+          deadline = time.monotonic() + 600
           while time.monotonic() < deadline:
+              if not os.path.isdir(f"/proc/{QEMU_PID}"):
+                  print("ERROR: QEMU exited before the guest agent became ready", file=sys.stderr)
+                  sys.exit(1)
               try:
                   with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
                       s.settimeout(3)
@@ -183,7 +188,7 @@ jobs:
               except Exception:
                   pass
               time.sleep(3)
-          print("ERROR: Guest agent not ready after 180s", file=sys.stderr)
+          print("ERROR: Guest agent not ready after 600s", file=sys.stderr)
           sys.exit(1)
           EOF
       - name: Create API key
