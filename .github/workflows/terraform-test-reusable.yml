@@ -192,6 +192,8 @@ jobs:
           python3 scripts/create-apikey.py 2> "$GITHUB_OUTPUT"
       - name: Setup env vars for tests
         run: |
+          echo "::add-mask::${{ steps.apikey.outputs.key }}"
+          echo "::add-mask::${{ steps.apikey.outputs.secret }}"
           {
             echo "OPNSENSE_API_KEY=${{ steps.apikey.outputs.key }}";
             echo "OPNSENSE_API_SECRET=${{ steps.apikey.outputs.secret }}";

@@ -13,6 +13,9 @@ import (
 // TestAccIDSSettingsGet verifies that the provider's API user can read the
 // native Suricata/IDS configuration. It is deliberately read-only.
 func TestAccIDSSettingsGet(t *testing.T) {
+	if os.Getenv("TF_ACC") != "1" {
+		t.Skip("acceptance test; set TF_ACC=1 to run")
+	}
 	acctest.AccPreCheck(t)
 
 	client := opnsense.NewClient(api.NewClient(api.Options{
