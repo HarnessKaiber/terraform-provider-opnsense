@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/browningluke/opnsense-go/pkg/api"
@@ -31,7 +33,18 @@ func TestAccZenarmorStatusDataSource(t *testing.T) {
 	}
 	status, err := liveClient().Zenarmor().Status(t.Context())
 	if err != nil {
-		t.Fatalf("independent Zenarmor status API query failed: %s", err)
+		if !isUnconfiguredStatusError(err) {
+			t.Fatalf("independent Zenarmor status API query failed: %s", err)
+		}
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { acctest.AccPreCheck(t) },
+			ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
+			Steps: []resource.TestStep{{
+				Config:      `data "opnsense_zenarmor_status" "test" {}`,
+				ExpectError: regexp.MustCompile(`status code 460`),
+			}},
+		})
+		return
 	}
 	featureCount := "0"
 	if status.CloudThreatIntel {
@@ -111,7 +124,24 @@ func TestAccZenarmorInterfacesDataSources(t *testing.T) {
 	acctest.AccPreCheck(t)
 	status, err := liveClient().Zenarmor().Status(t.Context())
 	if err != nil {
-		t.Fatalf("independent Zenarmor status API query failed: %s", err)
+		if !isUnconfiguredStatusError(err) {
+			t.Fatalf("independent Zenarmor status API query failed: %s", err)
+		}
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { acctest.AccPreCheck(t) },
+			ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
+			Steps: []resource.TestStep{
+				{
+					Config:      `data "opnsense_zenarmor_interfaces" "test" {}`,
+					ExpectError: regexp.MustCompile(`status code 460`),
+				},
+				{
+					Config:      `data "opnsense_zenarmor_interface" "test" { name = "vtnet0" }`,
+					ExpectError: regexp.MustCompile(`status code 460`),
+				},
+			},
+		})
+		return
 	}
 	if len(status.InterfacesList) == 0 {
 		t.Fatal("Zenarmor must advertise at least one monitored interface for the acceptance test")
@@ -145,6 +175,10 @@ data "opnsense_zenarmor_interface" "test" { name = %q }`, selected.Interface),
 			Check: resource.ComposeAggregateTestCheckFunc(checks...),
 		}},
 	})
+}
+
+func isUnconfiguredStatusError(err error) bool {
+	return strings.Contains(err.Error(), "status code 460")
 }
 
 func liveFirmwarePackages(ctx context.Context) ([]clientcore.Package, error) {
