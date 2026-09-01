@@ -19,9 +19,10 @@ func TestAccIDSSettingsGet(t *testing.T) {
 	acctest.AccPreCheck(t)
 
 	client := opnsense.NewClient(api.NewClient(api.Options{
-		Uri:       os.Getenv("OPNSENSE_URI"),
-		APIKey:    os.Getenv("OPNSENSE_API_KEY"),
-		APISecret: os.Getenv("OPNSENSE_API_SECRET"),
+		Uri:           os.Getenv("OPNSENSE_URI"),
+		APIKey:        os.Getenv("OPNSENSE_API_KEY"),
+		APISecret:     os.Getenv("OPNSENSE_API_SECRET"),
+		AllowInsecure: os.Getenv("OPNSENSE_ALLOW_INSECURE") == "true",
 	}))
 
 	settings, err := client.Ids().SettingsGet(context.Background())

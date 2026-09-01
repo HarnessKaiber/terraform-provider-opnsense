@@ -93,7 +93,17 @@ func (r *policyRuleResource) Read(ctx context.Context, req resource.ReadRequest,
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read IDS policy rule: %s", err))
 		return
 	}
-	resp.Diagnostics.Append(resp.State.Set(ctx, policyRuleFromAPI(p, d.ID))...)
+	model := policyRuleFromAPI(p, d.ID)
+	// OPNsense accepts msg and source when creating/updating an override but
+	// omits both fields from get_policy_rule. Preserve their last known values
+	// so a refresh does not manufacture drift for fields the API cannot read.
+	if p.Message == "" && !d.Message.IsNull() && !d.Message.IsUnknown() {
+		model.Message = d.Message
+	}
+	if p.Source == "" && !d.Source.IsNull() && !d.Source.IsUnknown() {
+		model.Source = d.Source
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, model)...)
 }
 func (r *policyRuleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var d policyRuleResourceModel

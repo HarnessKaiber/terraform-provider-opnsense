@@ -49,7 +49,12 @@ func TestAccIDSPolicyRuleResource(t *testing.T) {
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{Config: testAccIDSPolicyRuleConfig("acceptance rule"), Check: resource.TestCheckResourceAttr("opnsense_ids_policy_rule.test", "enabled", "false")},
-			{ResourceName: "opnsense_ids_policy_rule.test", ImportState: true, ImportStateVerify: true},
+			{
+				ResourceName:            "opnsense_ids_policy_rule.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"message", "source"},
+			},
 			{Config: testAccIDSPolicyRuleConfig("acceptance rule updated"), Check: resource.TestCheckResourceAttr("opnsense_ids_policy_rule.test", "message", "acceptance rule updated")},
 		},
 	})
