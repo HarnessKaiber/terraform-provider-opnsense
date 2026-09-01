@@ -2,6 +2,8 @@ module github.com/browningluke/terraform-provider-opnsense
 
 go 1.25.8
 
+replace github.com/browningluke/opnsense-go => github.com/HarnessKaiber/opnsense-go v0.25.1-harness.1
+
 require (
 	github.com/browningluke/opnsense-go v0.25.0
 	github.com/hashicorp/terraform-plugin-docs v0.25.0
