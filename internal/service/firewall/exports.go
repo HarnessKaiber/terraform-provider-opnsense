@@ -13,6 +13,7 @@ func Resources(ctx context.Context) []func() resource.Resource {
 		newCategoryResource,
 		newFilterResource,
 		newNATResource,
+		newNATSettingsResource,
 		newNATOneToOneResource,
 		newNATPortForwardResource,
 	}
